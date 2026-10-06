@@ -35,7 +35,7 @@
     let r;
     try {
       r = await fetch(BASE + '/api/admin' + path, { method, credentials: 'include', headers: body !== undefined ? { 'content-type': 'application/json' } : {}, body: body !== undefined ? JSON.stringify(body) : undefined });
-    } catch (e) { const er = new Error('Can’t reach the Thulori API. Check your connection and the apiBase in js/config.js.'); er.status = 0; throw er; }
+    } catch (e) { const er = new Error('Can’t reach the Thulori API. Check your connection and the API_BASE setting.'); er.status = 0; throw er; }
     let data = null; try { data = await r.json(); } catch (e) {}
     if (!r.ok) {
       const e = (data && data.error) || {};
@@ -159,7 +159,7 @@
       <p class="small muted">For the Thulori team only. Customers sign in on the website.</p>
     </div></div>`;
     if (DEMO) { $('.login__card h1').insertAdjacentHTML('afterend', '<p class="hint"><strong>Preview with sample data.</strong> Sign in with any email and password, then any 6-digit code. Nothing you do here is saved or sent.</p>'); $('#lg-email').value = 'owner@thulori.com'; $('#lg-pw').value = 'preview'; setTimeout(() => { const c = $('#lg-code'); if (c) c.value = '123456'; }); }
-    else if (!BASE) { $('.login__card h1').insertAdjacentHTML('afterend', '<p class="hint">Set <code>apiBase</code> in <code>admin/js/config.js</code> to the Thulori API address.</p>'); }
+    else if (!BASE) { $('.login__card h1').insertAdjacentHTML('afterend', '<p class="hint">Set <code>API_BASE</code> in <code>admin/.env</code> (or the host's environment variables) to the Thulori API address, then run <code>sh config-from-env.sh</code>.</p>'); }
     const lf = $('[data-login]'), cf = $('[data-code]'); let challenge = null;
     lf.addEventListener('submit', async e => {
       e.preventDefault(); const f = Object.fromEntries(new FormData(lf)), err = $('[data-err]', lf); err.textContent = '';

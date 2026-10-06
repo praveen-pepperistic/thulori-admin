@@ -1,12 +1,12 @@
 # Thulori admin panel
 
 This is the back office where the team runs orders. It's a static page that talks to the
-Thulori API (`../server`). There's no build step: deploy this folder to any static host on its own
+Thulori API (`../server`). The only build step is `config-from-env.sh`: deploy this folder to any static host on its own
 address, for example `https://admin.thulori.com`.
 
 ## Set up
 
-1. In `js/config.js`, set `apiBase` to the API address, for example `https://api.thulori.com`.
+1. Set `API_BASE` to the API address, for example `https://api.thulori.com`. On Vercel, add it in Project → Settings → Environment Variables; every build runs `config-from-env.sh` (see `vercel.json`) and writes `js/config.js`, failing if it's missing, not https, or localhost. Locally, put it in `.env` (copy `.env.example`) and run `sh config-from-env.sh`. `js/config.js` is generated, so don't edit or commit it.
 2. On the server, set `ADMIN_URL` to this panel's address, for example `https://admin.thulori.com`.
 3. Create your account. This gives you the **admin** role, which can see money:
 
@@ -25,6 +25,7 @@ address, for example `https://admin.thulori.com`.
 To run it locally:
 
 ```bash
+sh admin/config-from-env.sh        # writes js/config.js from admin/.env
 python3 -m http.server 5174 -d admin
 ```
 
