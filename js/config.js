@@ -1,6 +1,5 @@
-/* Thulori admin panel settings. apiBase is the Thulori API (the /server app),
-   e.g. 'https://api.thulori.com'. The admin panel is served from its own address
-   (e.g. https://admin.thulori.com) — set ADMIN_URL on the server to match. */
+/* Generated from .env by config-from-env.sh — edit the env file, not this file.
+   apiBase: the Thulori API (the server app). */
 window.THULORI_ADMIN = {
-  apiBase: 'http://localhost:8080'
+  apiBase: 'https://api.thulori.com'
 };
