@@ -327,14 +327,14 @@
         <div class="stack">
           <section class="card"><div class="card__h"><h2>Customer</h2>${!o.shipping ? '<button class="link" data-act="edit">Edit</button>' : ''}</div>
             <dl class="dl"><dt>Name</dt><dd>${esc(o.contact.name)}</dd><dt>Phone</dt><dd>${esc(o.contact.phone)} ${waLink(o.contact.phone) ? `· <a class="link" href="${waLink(o.contact.phone)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}</dd><dt>Email</dt><dd>${esc(o.contact.email)}</dd>
-            <dt>Account</dt><dd>${c.hasPassword ? 'Active' : '<span class="pill pill--sun">Hasn’t set a password yet</span>'}${c.waUpdates === false ? ' · WhatsApp updates off' : ''}</dd></dl>
+            <dt>Account</dt><dd>${c.hasPassword ? 'Active' : '<span class="pill pill--sun">Hasn’t set a password yet</span>'}</dd></dl>
             <div class="lbl" style="margin-top:14px">Deliver to</div>
             <address class="addr">${esc(a.to)}<br>${esc(a.line1)}${a.line2 ? '<br>' + esc(a.line2) : ''}<br>${esc(a.city)}, ${esc(a.state)} ${esc(a.pin)}${a.phone ? '<br>' + esc(a.phone) : ''}</address>
           </section>
           <section class="card"><div class="card__h"><h2>Order</h2></div>
             <dl class="dl">${d.items.map(i => `<dt>${esc(ED[i.edition] || i.edition)}</dt><dd>${esc(i.child)} · ${inr(i.price)}</dd>`).join('')}
             ${o.giftNote ? `<dt>Gift note</dt><dd>“${esc(o.giftNote)}”</dd>` : ''}
-            ${o.shipping ? `<dt>Shipped</dt><dd>${esc(o.shipping.courier)} · ${esc(o.shipping.awb)}<br><span class="muted small">${fmtDT(o.shipping.at)}${o.shipping.deliveredAt ? ' · delivered ' + fmtD(o.shipping.deliveredAt) : ''}</span></dd>` : ''}</dl>
+            ${o.shipping ? `<dt>Shipped</dt><dd>${esc(o.shipping.courier)} · ${esc(o.shipping.awb)}${o.shipping.url ? ` · <a class="link" href="${esc(o.shipping.url)}" target="_blank" rel="noopener">Track</a>` : ''}<br><span class="muted small">${fmtDT(o.shipping.at)}${o.shipping.deliveredAt ? ' · delivered ' + fmtD(o.shipping.deliveredAt) : ''}</span></dd>` : ''}</dl>
           </section>
           <section class="card"><div class="card__h"><h2>Team notes</h2></div>
             <form class="form" data-note><textarea class="in" name="text" rows="2" placeholder="Only the team sees these — e.g. “Mum prefers calls after 6pm”" aria-label="Add a note"></textarea><div class="btns"><button class="btn btn--sm" type="submit">Add note</button></div></form>
@@ -395,7 +395,7 @@
       ${field('mp-date', 'Paid on', `<input id="mp-date" name="paidOn" type="date" value="${todayISO()}" max="${todayISO()}">`)}</div>
       ${field('mp-ref', 'Reference / UTR', '<input id="mp-ref" name="ref" placeholder="e.g. UPI ref 4321…">')}
       ${field('mp-note', 'Note', '<input id="mp-note" name="note" placeholder="Optional">')}
-      <label class="check"><input type="checkbox" name="notify" checked> Send the customer the “payment received” email & WhatsApp</label>`,
+      <label class="check"><input type="checkbox" name="notify" checked> Email the customer the “payment received” message</label>`,
       onSubmit: async (f, v) => { await post(`/orders/${o.number}/mark-paid`, { method: v.method, amount: Number(v.amount) || undefined, paidOn: v.paidOn || undefined, ref: v.ref.trim() || undefined, note: v.note.trim() || undefined, notify: f.notify.checked }); toast('Payment recorded.'); reload(); } });
   }
   const ISSUE = { duplicate_payment: 'Paid twice', paid_after_cancel: 'Paid after the order was cancelled', refund_failed: 'Refund failed', overpaid: 'Paid more than the total', underpaid: 'Paid less than the total' };
@@ -458,15 +458,17 @@
         await refreshMeta(); reload();
       } });
   }
-  function shipDlg(o, force = false) {
+  function shipDlg(o, force = false, prev = {}) {
     dialog({ title: `Ship ${o.number}`, submit: force ? 'Ship anyway' : 'Mark as shipped', body: `
       ${force ? '<p class="hint"><strong>Not every book is approved for printing.</strong> Ship anyway only if the customer approved outside the site — better: record their decision in the book workspace first.</p>' : ''}
-      <div class="form__row">${field('sh-courier', 'Courier', `<input id="sh-courier" name="courier" list="couriers" required><datalist id="couriers">${COURIERS.map(x => `<option value="${x}">`).join('')}</datalist>`)}
-      ${field('sh-awb', 'Tracking number (AWB)', '<input id="sh-awb" name="awb" required>')}</div>
-      <label class="check"><input type="checkbox" name="notify" checked> Send the customer the tracking details (email & WhatsApp)</label>`,
+      <div class="form__row">${field('sh-courier', 'Courier', `<input id="sh-courier" name="courier" list="couriers" required value="${esc(prev.courier || '')}"><datalist id="couriers">${COURIERS.map(x => `<option value="${x}">`).join('')}</datalist>`)}
+      ${field('sh-awb', 'Tracking number (AWB)', `<input id="sh-awb" name="awb" required value="${esc(prev.awb || '')}">`)}</div>
+      ${field('sh-url', 'Tracking link (optional)', `<input id="sh-url" name="url" type="url" inputmode="url" placeholder="https://… from Shiprocket or the courier" value="${esc(prev.url || '')}">`)}
+      <p class="hint">The customer sees the courier, tracking number and a “Track parcel” button on their storybook and order pages.</p>
+      <label class="check"><input type="checkbox" name="notify" checked> Email the customer the tracking details</label>`,
       onSubmit: async (f, v) => {
-        try { await post(`/orders/${o.number}/ship`, { courier: v.courier.trim(), awb: v.awb.trim(), notify: f.notify.checked, force }); toast('Shipped — the customer has the tracking number.'); reload(); }
-        catch (e) { if (e.code === 'not_approved' && !force) { setTimeout(() => shipDlg(o, true)); return; } throw e; }
+        try { await post(`/orders/${o.number}/ship`, { courier: v.courier.trim(), awb: v.awb.trim(), trackingUrl: (v.url || '').trim() || undefined, notify: f.notify.checked, force }); toast('Shipped — the customer has the tracking number.'); reload(); }
+        catch (e) { if (e.code === 'not_approved' && !force) { setTimeout(() => shipDlg(o, true, v)); return; } throw e; }
       } });
   }
   function editOrderDlg(o) {
@@ -518,7 +520,7 @@
       <p class="hint">Now at <strong>${esc(STAGES[b.stage])}</strong>. Use this for steps that happened outside the website (photos and stories sent on WhatsApp, printing done…). To send a proof, upload it in the workspace. Shipping is on the order page.</p>
       ${field('st-to', 'Move to', `<select id="st-to" name="stage">${opts(choices, b.stage === 0 ? 1 : b.stage === 1 ? 2 : b.stage === 4 ? 6 : '')}</select>`)}
       ${field('st-note', 'Why / what happened', '<input id="st-note" name="note" placeholder="e.g. Photos and voice notes received on WhatsApp">')}
-      <label class="check"><input type="checkbox" name="notify" checked> Tell the customer (email & WhatsApp)</label>`,
+      <label class="check"><input type="checkbox" name="notify" checked> Email the customer</label>`,
       onSubmit: async (f, v) => { await post(`/books/${b.id}/stage`, { stage: Number(v.stage), note: v.note.trim() || undefined, notify: f.notify.checked }); toast('Checkpoint updated — the customer sees it now.'); after(); } });
   }
 
@@ -769,7 +771,7 @@
               <div class="form__row">${field('np-method', 'Paid by', `<select id="np-method" name="method">${opts({ upi: 'UPI', bank_transfer: 'Bank transfer', cash: 'Cash', card: 'Card', other: 'Other' }, 'upi')}</select>`)}${field('np-date', 'Paid on', `<input id="np-date" name="paidOn" type="date" value="${todayISO()}" max="${todayISO()}">`)}</div>
               ${field('np-ref', 'Reference / UTR', '<input id="np-ref" name="ref">')}
             </div>
-            <label class="check"><input type="checkbox" name="notify" checked> Email & WhatsApp the customer</label>
+            <label class="check"><input type="checkbox" name="notify" checked> Email the customer</label>
             <p class="err" data-err role="alert"></p>
             <button class="btn btn--sun" type="submit">Create order</button></div></section>
         </div>

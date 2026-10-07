@@ -55,7 +55,7 @@ window.ThuloriDemo = (() => {
   function moveTo(b, to, at, by, note, manual = false) { b.log.push({ from: b.stage, to, by: by || 'Customer', at, note: note || null, manual }); b.stage = to; b.dates[to] = dayOf(at); if (to >= 1 && !b.submittedAt) b.submittedAt = at; }
   function round(b, at, status, pages = PAGES, notes = []) { const r = { id: uid(), bookId: b.id, round: db.rounds.filter(x => x.bookId === b.id).length + 1, status, sentAt: at, decidedAt: status === 'ready' ? null : at, pages, notes }; db.rounds.push(r); return r; }
   function msg(ord, template, at, channel) {
-    const u = userOf(ord); (channel ? [channel] : ['email', 'whatsapp']).forEach(ch => db.msgs.push({ orderId: ord.id, template, channel: ch, to: ch === 'email' ? u.email : u.phone, status: 'sent', error: null, at: at || new Date().toISOString() }));
+    const u = userOf(ord); (channel ? [channel] : ['email']).forEach(ch => db.msgs.push({ orderId: ord.id, template, channel: ch, to: ch === 'email' ? u.email : u.phone, status: 'sent', error: null, at: at || new Date().toISOString() }));
   }
   function log(action, meta, who, at) { db.activity.push({ action, meta, who: who || ME.name, role: who === ME.name ? 'admin' : 'customer', at: at || new Date().toISOString() }); }
 
@@ -304,7 +304,7 @@ window.ThuloriDemo = (() => {
   on('POST', /^\/orders\/([^/]+)\/ship$/, (b, _p, [id]) => {
     const o = findOrder(id), bks = booksOf(o);
     if (bks.some(x => x.stage < 4) && !b.force) throw err(409, `${bks.find(x => x.stage < 4).child}’s book hasn’t been approved for printing yet. Approve it first, or ship anyway.`, 'not_approved');
-    const at = new Date().toISOString(); o.shipping = { courier: b.courier, awb: b.awb, at, deliveredAt: null }; bks.forEach(x => moveTo(x, 5, at, ME.name, `${b.courier} ${b.awb}`));
+    const at = new Date().toISOString(); o.shipping = { courier: b.courier, awb: b.awb, url: b.trackingUrl || null, at, deliveredAt: null }; bks.forEach(x => moveTo(x, 5, at, ME.name, `${b.courier} ${b.awb}`));
     log('admin_ship', { number: o.number, courier: b.courier, awb: b.awb }); if (b.notify) msg(o, 'shipped'); return { ok: true };
   });
   on('POST', /^\/orders\/([^/]+)\/deliver$/, (b, _p, [id]) => { const o = findOrder(id), at = new Date().toISOString(); o.shipping.deliveredAt = at; booksOf(o).forEach(x => moveTo(x, 6, at, ME.name)); log('admin_deliver', { number: o.number }); if (b.notify) msg(o, 'stage_update'); return { ok: true }; });
