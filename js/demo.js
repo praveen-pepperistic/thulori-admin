@@ -401,5 +401,5 @@ window.ThuloriDemo = (() => {
   }
   const invoice = id => db.invoices.find(i => i.id === id);
   seed();
-  return { handle, put, stories, invoice, company: { name: 'Pepperistic Studio Pvt Ltd', brand: 'Thulori', state: CO_STATE, email: 'hello@thulori.com', phone: '+91 97893 90456' } };
+  return { handle, put, stories, invoice, company: { name: 'Pepperistic Studio Pvt Ltd', brand: 'Thulori', state: CO_STATE, email: 'hello@thulori.com', phone: '+91 63694 52925' } };
 })();
