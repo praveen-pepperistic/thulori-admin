@@ -159,7 +159,7 @@
       <p class="small muted">For the Thulori team only. Customers sign in on the website.</p>
     </div></div>`;
     if (DEMO) { $('.login__card h1').insertAdjacentHTML('afterend', '<p class="hint"><strong>Preview with sample data.</strong> Sign in with any email and password, then any 6-digit code. Nothing you do here is saved or sent.</p>'); $('#lg-email').value = 'owner@thulori.com'; $('#lg-pw').value = 'preview'; setTimeout(() => { const c = $('#lg-code'); if (c) c.value = '123456'; }); }
-    else if (!BASE) { $('.login__card h1').insertAdjacentHTML('afterend', '<p class="hint">Set <code>API_BASE</code> in <code>admin/.env</code> (or the host's environment variables) to the Thulori API address, then run <code>sh config-from-env.sh</code>.</p>'); }
+    else if (!BASE) { $('.login__card h1').insertAdjacentHTML('afterend', '<p class="hint">Set <code>API_BASE</code> in <code>admin/.env</code> (or the host’s environment variables) to the Thulori API address, then run <code>sh config-from-env.sh</code>.</p>'); }
     const lf = $('[data-login]'), cf = $('[data-code]'); let challenge = null;
     lf.addEventListener('submit', async e => {
       e.preventDefault(); const f = Object.fromEntries(new FormData(lf)), err = $('[data-err]', lf); err.textContent = '';
